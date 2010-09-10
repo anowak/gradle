@@ -71,6 +71,24 @@ public class DefaultResolvedDependencyTest {
     }
 
     @Test
+    public void getAllModuleArtifactsWithCycle() {
+        Set<ResolvedArtifact> firstModuleArtifacts = WrapUtil.<ResolvedArtifact>toSet(createArtifact("firstModuleArtifact"));
+        Set<ResolvedArtifact> secondModuleArtifacts = WrapUtil.<ResolvedArtifact>toSet(createArtifact("secondModuleArtifact"));
+
+        DefaultResolvedDependency directDependency = new DefaultResolvedDependency("someGroup", "someName", "someVersion", "someConfiguration",
+                firstModuleArtifacts);
+        DefaultResolvedDependency transitiveDependency = new DefaultResolvedDependency("anotherGroup", "anotherChild", "anotherVersion", "anotherChildConfiguration",
+                secondModuleArtifacts);
+
+        // our direct dependency points to the first module, which in turn depends on the second one
+        directDependency.getChildren().add(transitiveDependency);
+        // second module depends on the first one, forming a cycle
+        transitiveDependency.getChildren().add(directDependency);
+
+        assertThat(directDependency.getAllModuleArtifacts(), equalTo(GUtil.addSets(firstModuleArtifacts, secondModuleArtifacts)));
+    }
+
+    @Test
     public void getParentArtifacts() {
         Set<ResolvedArtifact> someModuleArtifacts = WrapUtil.toSet(createArtifact("someResolvedArtifact"));
         DefaultResolvedDependency resolvedDependency = createResolvedDependency(someModuleArtifacts);
