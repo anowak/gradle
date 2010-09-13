@@ -77,7 +77,7 @@ class ClasspathFactory {
         return getDependencies(eclipseClasspath.plusConfigurations, eclipseClasspath.minusConfigurations, { it instanceof org.gradle.api.artifacts.ProjectDependency }).collect { projectDependency ->
             projectDependency.dependencyProject
         }.collect { dependencyProject ->
-            new org.gradle.plugins.eclipse.model.ProjectDependency('/' + dependencyProject.name, true, null, [] as Set)
+            new org.gradle.plugins.eclipse.model.ProjectDependency(dependencyProject.path.replace(':', '/'), true, null, [] as Set)
         }
     }
 
