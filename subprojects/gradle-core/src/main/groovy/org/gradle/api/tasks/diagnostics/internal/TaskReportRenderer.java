@@ -65,7 +65,7 @@ public class TaskReportRenderer extends TextReportRenderer {
 
     public void startTaskGroup(String taskGroup) {
         if (!GUtil.isTrue(taskGroup)) {
-            addSubheading(currentProjectHasTasks ? "Other tasks" : "Tasks");
+            addSubheading("Tasks");
         } else {
             addSubheading(StringUtils.capitalize(taskGroup) + " tasks");
         }
