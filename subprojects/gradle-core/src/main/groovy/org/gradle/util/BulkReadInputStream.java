@@ -13,21 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.gradle.util;
 
+import java.io.IOException;
+import java.io.InputStream;
 
-package org.gradle.integtests
-
-import org.gradle.integtests.fixtures.TestResources
-import org.junit.Rule
-import org.junit.Test
-
-class EclipseIntegrationTest extends AbstractIntegrationTest {
-    @Rule
-    public final TestResources testResources = new TestResources()
-
-    @Test
-    public void canCreateAndDeleteMetaData() {
-        File buildFile = testFile("master/build.gradle");
-        usingBuildFile(buildFile).run();
+public abstract class BulkReadInputStream extends InputStream {
+    @Override
+    public int read() throws IOException {
+        byte[] buffer = new byte[1];
+        while (true) {
+            int nread = read(buffer);
+            if (nread < 0) {
+                return -1;
+            }
+            if (nread == 1) {
+                return 0xff & buffer[0];
+            }
+        }
     }
+
+    @Override
+    public abstract int read(byte[] bytes, int pos, int count) throws IOException;
 }

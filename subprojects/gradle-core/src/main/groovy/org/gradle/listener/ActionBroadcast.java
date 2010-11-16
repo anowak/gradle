@@ -13,21 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.gradle.listener;
 
+import groovy.lang.Closure;
+import org.gradle.api.Action;
 
-package org.gradle.integtests
+public class ActionBroadcast<T> implements Action<T> {
+    private final ListenerBroadcast<Action> broadcast = new ListenerBroadcast<Action>(Action.class);
 
-import org.gradle.integtests.fixtures.TestResources
-import org.junit.Rule
-import org.junit.Test
+    public void execute(T t) {
+        broadcast.getSource().execute(t);
+    }
 
-class EclipseIntegrationTest extends AbstractIntegrationTest {
-    @Rule
-    public final TestResources testResources = new TestResources()
+    public void add(Action<? super T> action) {
+        broadcast.add(action);
+    }
 
-    @Test
-    public void canCreateAndDeleteMetaData() {
-        File buildFile = testFile("master/build.gradle");
-        usingBuildFile(buildFile).run();
+    public void add(Closure action) {
+        broadcast.add("execute", action);
     }
 }

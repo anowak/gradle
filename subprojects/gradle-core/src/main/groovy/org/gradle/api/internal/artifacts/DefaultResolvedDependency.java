@@ -19,8 +19,6 @@ package org.gradle.api.internal.artifacts;
 import org.gradle.api.InvalidUserDataException;
 import org.gradle.api.artifacts.ResolvedArtifact;
 import org.gradle.api.artifacts.ResolvedDependency;
-import org.gradle.api.internal.CachingDirectedGraphWalker;
-import org.gradle.api.internal.DirectedGraph;
 import org.gradle.util.GUtil;
 
 import java.util.*;
@@ -38,8 +36,6 @@ public class DefaultResolvedDependency implements ResolvedDependency {
     private Set<ResolvedArtifact> moduleArtifacts = new LinkedHashSet<ResolvedArtifact>();
     private Map<ResolvedDependency, Set<ResolvedArtifact>> allArtifactsCache = new HashMap<ResolvedDependency, Set<ResolvedArtifact>>();
     private Set<ResolvedArtifact> allModuleArtifactsCache;
-    private final CachingDirectedGraphWalker<ResolvedDependency, ResolvedArtifact> walker 
-            = new CachingDirectedGraphWalker<ResolvedDependency, ResolvedArtifact>(new ResolvedDependencyArtifactsGraph());
 
     public DefaultResolvedDependency(String name, String moduleGroup, String moduleName, String moduleVersion,
                                      String configuration, Set<ResolvedArtifact> moduleArtifacts) {
@@ -93,9 +89,9 @@ public class DefaultResolvedDependency implements ResolvedDependency {
         if (allModuleArtifactsCache == null) {
             Set<ResolvedArtifact> allArtifacts = new LinkedHashSet<ResolvedArtifact>();
             allArtifacts.addAll(getModuleArtifacts());
-            walker.add(getChildren());
-            allArtifacts.addAll(walker.findValues());
-            
+            for (ResolvedDependency childResolvedDependency : getChildren()) {
+                allArtifacts.addAll(childResolvedDependency.getAllModuleArtifacts());
+            }
             allModuleArtifactsCache = allArtifacts;
         }
         return allModuleArtifactsCache;
@@ -160,13 +156,5 @@ public class DefaultResolvedDependency implements ResolvedDependency {
     public void addChild(DefaultResolvedDependency child) {
         children.add(child);
         child.parents.add(this);
-    }
-    
-    private class ResolvedDependencyArtifactsGraph implements DirectedGraph<ResolvedDependency, ResolvedArtifact> {
-        public void getNodeValues(ResolvedDependency node, Collection<ResolvedArtifact> values,
-                                  Collection<ResolvedDependency> connectedNodes) {
-            values.addAll(node.getModuleArtifacts());
-            connectedNodes.addAll(node.getChildren());
-        }
     }
 }

@@ -62,9 +62,8 @@ import java.io.File;
 import java.net.URI;
 import java.util.*;
 
-import static java.util.Collections.singletonMap;
-import static org.gradle.util.GUtil.addMaps;
-import static org.gradle.util.GUtil.isTrue;
+import static java.util.Collections.*;
+import static org.gradle.util.GUtil.*;
 
 /**
  * @author Hans Dockter

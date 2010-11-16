@@ -65,7 +65,6 @@ public class DefaultCommandLineConverterTest {
     private StartParameter actualStartParameter;
     private boolean expectedProfile;
 
-
     private final DefaultCommandLineConverter commandLineConverter = new DefaultCommandLineConverter();
 
     @Test
@@ -356,12 +355,6 @@ public class DefaultCommandLineConverterTest {
     @Test(expected = CommandLineArgumentException.class)
     public void withUnknownOption() {
         checkConversion("--unknown");
-    }
-
-    @Test
-    public void withProfile() {
-        expectedProfile = true;
-        checkConversion("--profile");
     }
 
     @Test

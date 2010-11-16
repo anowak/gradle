@@ -59,12 +59,6 @@ public class AsciiReportRenderer extends TextReportRenderer implements Dependenc
         renderer = new GraphRenderer(getTextOutput());
         renderer.visit(new Action<StyledTextOutput>() {
             public void execute(StyledTextOutput styledTextOutput) {
-        }, true);
-        }
-        hasConfigs = true;
-        renderer = new GraphRenderer(getTextOutput());
-        renderer.visit(new Action<StyledTextOutput>() {
-            public void execute(StyledTextOutput styledTextOutput) {
                 getTextOutput().withStyle(Identifier).text(configuration.getName());
                 getTextOutput().withStyle(Description).text(getDescription(configuration));
             }

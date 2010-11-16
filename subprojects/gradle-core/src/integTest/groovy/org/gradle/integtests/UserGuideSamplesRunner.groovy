@@ -168,22 +168,6 @@ class UserGuideSamplesRunner extends Runner {
         return actual == expected
     }
 
-        }
-
-        if (expected == 'Total time: 1 secs') {
-            return actual.matches('Total time: .+ secs')
-        }
-        
-        // Normalise default object toString() values
-        actual = actual.replaceAll('(\\w+(\\.\\w+)*)@\\p{XDigit}+', '$1@12345')
-        // Normalise $samplesDir
-        actual = actual.replaceAll(java.util.regex.Pattern.quote(dist.samplesDir.absolutePath), '/home/user/gradle/samples')
-        // Normalise file separators
-        actual = actual.replaceAll(java.util.regex.Pattern.quote(File.separator), '/')
-
-        return actual == expected
-    }
-
     static Collection<SampleRun> getScriptsForSamples(File userguideInfoDir) {
         Node samples = new XmlParser().parse(new File(userguideInfoDir, 'samples.xml'))
         Map<String, List<GradleRun>> samplesByDir = new LinkedHashMap<String, List<GradleRun>>()

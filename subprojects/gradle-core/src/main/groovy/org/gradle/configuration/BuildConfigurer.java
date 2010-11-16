@@ -13,21 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.gradle.configuration;
 
+import org.gradle.api.internal.GradleInternal;
 
-package org.gradle.integtests
-
-import org.gradle.integtests.fixtures.TestResources
-import org.junit.Rule
-import org.junit.Test
-
-class EclipseIntegrationTest extends AbstractIntegrationTest {
-    @Rule
-    public final TestResources testResources = new TestResources()
-
-    @Test
-    public void canCreateAndDeleteMetaData() {
-        File buildFile = testFile("master/build.gradle");
-        usingBuildFile(buildFile).run();
-    }
+public interface BuildConfigurer {
+    void configure(GradleInternal gradleInternal);
 }

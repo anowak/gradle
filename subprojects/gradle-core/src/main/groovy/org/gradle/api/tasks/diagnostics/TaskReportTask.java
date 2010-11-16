@@ -21,7 +21,6 @@ import org.gradle.api.internal.project.ProjectInternal;
 import org.gradle.api.internal.tasks.CommandLineOption;
 import org.gradle.api.tasks.diagnostics.internal.*;
 import org.gradle.util.GUtil;
-import org.gradle.util.GUtil;
 
 import java.io.IOException;
 

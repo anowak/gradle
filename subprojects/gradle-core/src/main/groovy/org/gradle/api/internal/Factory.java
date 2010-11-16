@@ -13,21 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.gradle.api.internal;
 
-
-package org.gradle.integtests
-
-import org.gradle.integtests.fixtures.TestResources
-import org.junit.Rule
-import org.junit.Test
-
-class EclipseIntegrationTest extends AbstractIntegrationTest {
-    @Rule
-    public final TestResources testResources = new TestResources()
-
-    @Test
-    public void canCreateAndDeleteMetaData() {
-        File buildFile = testFile("master/build.gradle");
-        usingBuildFile(buildFile).run();
-    }
+/**
+ * A generic factory which creates instances of type T.
+ *
+ * @param <T> The type of object created.
+ */
+public interface Factory<T> {
+    /**
+     * Creates a new instance of type T.
+     * @return The instance. Never returns null.
+     */
+    T create();
 }

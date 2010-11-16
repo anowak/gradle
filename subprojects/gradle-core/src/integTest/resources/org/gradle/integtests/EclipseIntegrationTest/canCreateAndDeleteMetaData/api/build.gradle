@@ -1,4 +1,3 @@
-eclipseProject.projectName = 'API'
 apply plugin: 'java'
 
 dependencies {

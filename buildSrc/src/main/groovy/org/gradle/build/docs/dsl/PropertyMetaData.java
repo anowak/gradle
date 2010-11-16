@@ -13,21 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.gradle.build.docs.dsl;
 
+import java.io.Serializable;
 
-package org.gradle.integtests
+public class PropertyMetaData implements Serializable {
+    private String type;
+    private boolean writeable;
 
-import org.gradle.integtests.fixtures.TestResources
-import org.junit.Rule
-import org.junit.Test
+    public String getType() {
+        return type;
+    }
 
-class EclipseIntegrationTest extends AbstractIntegrationTest {
-    @Rule
-    public final TestResources testResources = new TestResources()
+    public void setType(String type) {
+        this.type = type;
+    }
 
-    @Test
-    public void canCreateAndDeleteMetaData() {
-        File buildFile = testFile("master/build.gradle");
-        usingBuildFile(buildFile).run();
+    public boolean isWriteable() {
+        return writeable;
+    }
+
+    public void setWriteable(boolean writeable) {
+        this.writeable = writeable;
     }
 }
