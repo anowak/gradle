@@ -15,42 +15,75 @@
  */
 package org.gradle.api.tasks.diagnostics
 
-import org.gradle.api.internal.AbstractTask
-import org.gradle.api.tasks.AbstractSpockTaskTest
+import org.gradle.api.Project
+import org.gradle.api.internal.project.ProjectInternal
 import org.gradle.logging.internal.TestStyledTextOutput
 import org.gradle.util.HelperUtil
-import org.gradle.api.Project
+import spock.lang.Specification
 
-class ProjectReportTaskTest extends AbstractSpockTaskTest {
-    private final ProjectReportTask task = createTask(ProjectReportTask)
+class ProjectReportTaskTest extends Specification {
+    private final ProjectInternal project = HelperUtil.createRootProject()
 
-    @Override
-    AbstractTask getTask() {
-        return task
-    }
-
-    def rendersReport() {
+    def rendersReportForRootProjectWithChildren() {
+        ProjectReportTask task = HelperUtil.createTask(ProjectReportTask, project)
         project.description = 'this is the root project'
         Project child1 = HelperUtil.createChildProject(project, "child1")
         child1.description = 'this is a subproject'
         HelperUtil.createChildProject(child1, "child1")
         HelperUtil.createChildProject(project, "child2")
-        task.textOutput = new TestStyledTextOutput()
+        task.textOutput = new TestStyledTextOutput().ignoreStyle()
 
         when:
         task.listProjects()
 
         then:
-        task.textOutput.value == toNative('''
-------------------------------------------------------------
-Build 'test'
-------------------------------------------------------------
-
+        task.textOutput.value == '''
 Root project 'test' - this is the root project
 +--- Project ':child1' - this is a subproject
 |    \\--- Project ':child1:child1'
 \\--- Project ':child2'
-''')
+
+To see a list of the tasks of a project, run gradle <project-path>:tasks
+For example, try running gradle :child1:tasks
+'''
+    }
+
+    def rendersReportForRootProjectWithNoChildren() {
+        ProjectReportTask task = HelperUtil.createTask(ProjectReportTask, project)
+        project.description = 'this is the root project'
+        task.textOutput = new TestStyledTextOutput().ignoreStyle()
+
+        when:
+        task.listProjects()
+
+        then:
+        task.textOutput.value == '''
+Root project 'test' - this is the root project
+No sub-projects
+
+To see a list of the tasks of a project, run gradle <project-path>:tasks
+For example, try running gradle :tasks
+'''
+    }
+
+    def rendersReportForNonRootProjectWithNoChildren() {
+        Project child1 = HelperUtil.createChildProject(project, "child1")
+        ProjectReportTask task = HelperUtil.createTask(ProjectReportTask, child1)
+        task.textOutput = new TestStyledTextOutput().ignoreStyle()
+
+        when:
+        task.listProjects()
+
+        then:
+        task.textOutput.value == '''
+Project ':child1'
+No sub-projects
+
+To see a list of the tasks of a project, run gradle <project-path>:tasks
+For example, try running gradle :child1:tasks
+
+To see a list of all the projects in this build, run gradle :projects
+'''
     }
 
     def String toNative(String value) {

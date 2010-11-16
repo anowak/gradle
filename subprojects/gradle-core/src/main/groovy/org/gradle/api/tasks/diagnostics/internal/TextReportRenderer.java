@@ -17,11 +17,13 @@ package org.gradle.api.tasks.diagnostics.internal;
 
 import org.gradle.api.Project;
 import org.gradle.logging.StyledTextOutput;
-import org.gradle.logging.internal.WriterBackedStyledTextOutput;
+import org.gradle.logging.internal.StreamingStyledTextOutput;
+import org.gradle.util.GUtil;
 
 import java.io.*;
 
-import static org.gradle.logging.StyledTextOutput.Style.*;
+import static org.gradle.logging.StyledTextOutput.Style.Header;
+import static org.gradle.logging.StyledTextOutput.Style.Normal;
 
 /**
  * <p>A basic {@link ReportRenderer} which writes out a text report.
@@ -37,7 +39,7 @@ public class TextReportRenderer implements ReportRenderer {
 
     public void setOutputFile(File file) throws IOException {
         cleanupWriter();
-        setWriter(new WriterBackedStyledTextOutput(new BufferedWriter(new FileWriter(file))), true);
+        setWriter(new StreamingStyledTextOutput(new BufferedWriter(new FileWriter(file))), true);
     }
 
     public void startProject(Project project) {
@@ -46,6 +48,9 @@ public class TextReportRenderer implements ReportRenderer {
             header = "Root Project";
         } else {
             header = String.format("Project %s", project.getPath());
+        }
+        if (GUtil.isTrue(project.getDescription())) {
+            header = header + " - " + project.getDescription();
         }
         writeHeading(header);
     }
@@ -77,9 +82,12 @@ public class TextReportRenderer implements ReportRenderer {
     }
 
     public void writeHeading(String heading) {
-        textOutput.println().style(Header).println(SEPARATOR);
+        textOutput.println().style(Header);
+        textOutput.println(SEPARATOR);
         textOutput.println(heading);
-        textOutput.text(SEPARATOR).style(Normal).println().println();
+        textOutput.text(SEPARATOR);
+        textOutput.style(Normal);
+        textOutput.println().println();
     }
 
     public void writeSubheading(String heading) {

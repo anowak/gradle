@@ -113,7 +113,7 @@
                         <tr>
                             <td class="indentPath">${task.path}</td>
                             <td class="et">${time.format(task.elapsedExecution)}</td>
-                            <td><%= task.state.getSkipped() ? task.state.skipMessage : '&nbsp;'%></td>
+                            <td><%= task.state.getSkipped() ? task.state.skipMessage : (task.state.didWork ? '&nbsp;' : 'Did No Work')%></td>
                         </tr>
                         <%
                             }

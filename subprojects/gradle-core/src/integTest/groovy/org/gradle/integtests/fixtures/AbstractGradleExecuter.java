@@ -86,6 +86,10 @@ public abstract class AbstractGradleExecuter implements GradleExecuter {
         throw new UnsupportedOperationException();
     }
 
+    public File getUserHomeDir() {
+        return userHomeDir;
+    }
+
     public GradleExecuter withUserHomeDir(File userHomeDir) {
         this.userHomeDir = userHomeDir;
         return this;
@@ -161,7 +165,7 @@ public abstract class AbstractGradleExecuter implements GradleExecuter {
             allArgs.add("--quiet");
         }
         if (taskList) {
-            allArgs.add("--tasks");
+            allArgs.add("tasks");
         }
         if (!searchUpwards) {
             allArgs.add("--no-search-upward");

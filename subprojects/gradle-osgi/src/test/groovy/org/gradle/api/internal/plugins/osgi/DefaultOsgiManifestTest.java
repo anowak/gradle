@@ -242,8 +242,8 @@ public class DefaultOsgiManifestTest {
 
     private void addPlainAttributesAndSections(DefaultManifest manifest) {
         manifest.getAttributes().put(ARBITRARY_ATTRIBUTE, "I like green eggs and ham.");
-        final Attributes section_atts = new DefaultAttributes();
-        section_atts.put(ANOTHER_ARBITRARY_ATTRIBUTE, "Death is the great equalizer.");
-        manifest.getSections().put(ARBITRARY_SECTION, section_atts);
+        Attributes sectionAtts = new DefaultAttributes();
+        sectionAtts.put(ANOTHER_ARBITRARY_ATTRIBUTE, "Death is the great equalizer.");
+        manifest.getSections().put(ARBITRARY_SECTION, sectionAtts);
     }
 }

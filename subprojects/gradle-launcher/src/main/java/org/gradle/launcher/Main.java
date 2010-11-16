@@ -15,112 +15,73 @@
  */
 package org.gradle.launcher;
 
-import org.gradle.*;
-import org.gradle.api.logging.Logger;
-import org.gradle.api.logging.Logging;
+import org.gradle.BuildExceptionReporter;
+import org.gradle.StartParameter;
+import org.gradle.api.Action;
 import org.gradle.configuration.GradleLauncherMetaData;
-import org.gradle.gradleplugin.userinterface.swing.standalone.BlockingApplication;
-import org.gradle.initialization.CommandLine2StartParameterConverter;
-import org.gradle.initialization.DefaultCommandLine2StartParameterConverter;
-import org.gradle.util.Clock;
-import org.gradle.util.GradleVersion;
+import org.gradle.logging.internal.StreamingStyledTextOutputFactory;
 
-import java.io.PrintStream;
+import java.util.Arrays;
 
 /**
+ * The main command-line entry-point for Gradle.
+ *
  * @author Hans Dockter
  */
 public class Main {
-    private static Logger logger = Logging.getLogger(Main.class);
-
     private final String[] args;
-    private BuildCompleter buildCompleter = new ProcessExitBuildCompleter();
-    private CommandLine2StartParameterConverter parameterConverter = new DefaultCommandLine2StartParameterConverter();
 
     public Main(String[] args) {
         this.args = args;
     }
 
     public static void main(String[] args) {
-        new Main(args).execute();
-    }
-
-    void setBuildCompleter(BuildCompleter buildCompleter) {
-        this.buildCompleter = buildCompleter;
-    }
-
-    public void setParameterConverter(CommandLine2StartParameterConverter parameterConverter) {
-        this.parameterConverter = parameterConverter;
+        try {
+            new Main(args).execute();
+            System.exit(0);
+        } catch (Throwable throwable) {
+            throwable.printStackTrace();
+            System.exit(1);
+        }
     }
 
     public void execute() {
-        Clock buildTimeClock = new Clock();
-
-        StartParameter startParameter = null;
-
+        BuildCompleter buildCompleter = createBuildCompleter();
         try {
-            startParameter = parameterConverter.convert(args);
-        } catch (Exception e) {
-            System.err.println(e.getMessage());
-            showUsage(System.err);
-            buildCompleter.exit(e);
-        }
-
-        if (startParameter.isShowHelp()) {
-            showUsage(System.out);
-            buildCompleter.exit(null);
-        }
-
-        if (startParameter.isShowVersion()) {
-            System.out.println(new GradleVersion().prettyPrint());
-            buildCompleter.exit(null);
-        }
-
-        if (startParameter.isLaunchGUI()) {
-            try {
-                BlockingApplication.launchAndBlock();
-            } catch (Throwable e) {
-                logger.error("Failed to run the UI.", e);
-                buildCompleter.exit(e);
-            }
-
-            buildCompleter.exit(null);
-        }
-
-        BuildListener resultLogger = new BuildLogger(logger, buildTimeClock, startParameter);
-        try {
-            GradleLauncher gradleLauncher = GradleLauncher.newInstance(startParameter);
-
-            gradleLauncher.useLogger(resultLogger);
-
-            BuildResult buildResult = gradleLauncher.run();
-            if (buildResult.getFailure() != null) {
-                buildCompleter.exit(buildResult.getFailure());
-            }
+            // We execute as much as possible inside this try block (including construction of dependencies), so that
+            // the error reporting below is applied to as much code as possible
+            CommandLineActionFactory actionFactory = createActionFactory();
+            Action<ExecutionListener> action = actionFactory.convert(Arrays.asList(args));
+            action.execute(buildCompleter);
         } catch (Throwable e) {
-            resultLogger.buildFinished(new BuildResult(null, e));
-            buildCompleter.exit(e);
+            BuildExceptionReporter exceptionReporter = new BuildExceptionReporter(new StreamingStyledTextOutputFactory(System.err), new StartParameter(), new GradleLauncherMetaData());
+            exceptionReporter.reportException(e);
+            buildCompleter.onFailure(e);
         }
-        buildCompleter.exit(null);
+        buildCompleter.exit();
     }
 
-    private void showUsage(PrintStream out) {
-        String appName = System.getProperty("org.gradle.appname", "gradle");
-        out.println();
-        out.print("USAGE: ");
-        new GradleLauncherMetaData().describeCommand(out, "[option...]", "[task...]");
-        out.println();
-        out.println();
-        parameterConverter.showHelp(out);
+    CommandLineActionFactory createActionFactory() {
+        return new CommandLineActionFactory();
     }
 
-    public interface BuildCompleter {
-        void exit(Throwable failure);
+    BuildCompleter createBuildCompleter() {
+        return new ProcessExitExecutionListener();
     }
 
-    private static class ProcessExitBuildCompleter implements BuildCompleter {
-        public void exit(Throwable failure) {
-            System.exit(failure == null ? 0 : 1);
+    interface BuildCompleter extends ExecutionListener {
+        void exit();
+    }
+
+    static class ProcessExitExecutionListener implements BuildCompleter {
+        private boolean failure;
+
+        public void onFailure(Throwable failure) {
+            this.failure = true;
+        }
+
+        public void exit() {
+            System.exit(failure ? 1 : 0);
         }
     }
 }

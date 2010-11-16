@@ -21,8 +21,12 @@ import org.gradle.logging.StyledTextOutput;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.fusesource.jansi.Ansi.Attribute;
+import static org.fusesource.jansi.Ansi.Attribute.*;
+import static org.fusesource.jansi.Ansi.Attribute.ITALIC;
 import static org.fusesource.jansi.Ansi.Color.*;
 import static org.gradle.logging.StyledTextOutput.Style.*;
+import static org.gradle.logging.StyledTextOutput.Style.Success;
 
 public class DefaultColorMap implements ColorMap {
     private static final String STATUSBAR = "statusbar";
@@ -37,30 +41,26 @@ public class DefaultColorMap implements ColorMap {
         public void off(Ansi ansi) {
         }
     };
-    private final Color bold = new Color() {
-        public void on(Ansi ansi) {
-            ansi.a(Ansi.Attribute.INTENSITY_BOLD);
-        }
-
-        public void off(Ansi ansi) {
-            ansi.a(Ansi.Attribute.INTENSITY_BOLD_OFF);
-        }
-    };
 
     public DefaultColorMap() {
-//        addDefault(Header, DEFAULT);
-        addDefault(Info, YELLOW);
-        addDefault(Description, YELLOW);
-        addDefault(ProgressStatus, YELLOW);
-        addDefault(Identifier, GREEN);
-        addDefault(UserInput, GREEN);
-        addDefault(Failure, RED);
-//        addDefault(Error, RED);
-        defaults.put(STATUSBAR, BOLD);
+        addDefault(Info, "yellow");
+        addDefault(Error, "default");
+        addDefault(Header, "default");
+        addDefault(Description, "yellow");
+        addDefault(ProgressStatus, "yellow");
+        addDefault(Identifier, "green");
+        addDefault(UserInput, "bold");
+        addDefault(Success, "default");
+        addDefault(Failure, "red");
+        addDefault(STATUSBAR, "bold");
     }
 
-    private void addDefault(StyledTextOutput.Style style, Ansi.Color color) {
-        defaults.put(style.name().toLowerCase(), color.name());
+    private void addDefault(StyledTextOutput.Style style, String color) {
+        addDefault(style.name().toLowerCase(), color);
+    }
+
+    private void addDefault(String style, String color) {
+        defaults.put(style, color);
     }
 
     public void setUseColor(boolean useColor) {
@@ -75,22 +75,22 @@ public class DefaultColorMap implements ColorMap {
         return getColor(style.name().toLowerCase());
     }
 
-    private Color getColor(String name) {
+    private Color getColor(String style) {
         if (!useColor) {
             return noDecoration;
         }
 
-        Color color = colors.get(name);
+        Color color = colors.get(style);
         if (color == null) {
-            color = createColor(name);
-            colors.put(name, color);
+            color = createColor(style);
+            colors.put(style, color);
         }
 
         return color;
     }
 
-    private Color createColor(String name) {
-        String colorSpec = System.getProperty(String.format("org.gradle.color.%s", name), defaults.get(name));
+    private Color createColor(String style) {
+        String colorSpec = System.getProperty(String.format("org.gradle.color.%s", style), defaults.get(style));
 
         if (colorSpec != null) {
             if (colorSpec.equalsIgnoreCase(BOLD)) {
@@ -99,7 +99,13 @@ public class DefaultColorMap implements ColorMap {
                     // iTerm displays bold as red (by default), so don't bother
                     return noDecoration;
                 }
-                return bold;
+                return new AttributeColor(INTENSITY_BOLD, INTENSITY_BOLD_OFF);
+            }
+            if (colorSpec.equalsIgnoreCase("reverse")) {
+                return new AttributeColor(NEGATIVE_ON, NEGATIVE_OFF);
+            }
+            if (colorSpec.equalsIgnoreCase("italic")) {
+                return new AttributeColor(ITALIC, ITALIC_OFF);
             }
 
             Ansi.Color ansiColor = Ansi.Color.valueOf(colorSpec.toUpperCase());
@@ -124,6 +130,24 @@ public class DefaultColorMap implements ColorMap {
 
         public void off(Ansi ansi) {
             ansi.fg(DEFAULT);
+        }
+    }
+
+    private static class AttributeColor implements Color {
+        private final Ansi.Attribute on;
+        private final Ansi.Attribute off;
+
+        public AttributeColor(Attribute on, Attribute off) {
+            this.on = on;
+            this.off = off;
+        }
+
+        public void on(Ansi ansi) {
+            ansi.a(on);
+        }
+
+        public void off(Ansi ansi) {
+            ansi.a(off);
         }
     }
 }

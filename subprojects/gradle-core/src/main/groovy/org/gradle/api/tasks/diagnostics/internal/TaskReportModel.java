@@ -15,72 +15,12 @@
  */
 package org.gradle.api.tasks.diagnostics.internal;
 
-import com.google.common.collect.Ordering;
-import com.google.common.collect.SetMultimap;
-import com.google.common.collect.TreeMultimap;
-import org.gradle.api.Task;
-import org.gradle.api.internal.DirectedGraph;
-import org.gradle.api.internal.GraphAggregator;
-import org.gradle.util.GUtil;
-
-import java.util.*;
-
-public class TaskReportModel {
-    private final SetMultimap<String, TaskDetails> groups = TreeMultimap.create(last(last(GUtil.caseInsensitive(), "other"), ""), Ordering.natural());
-
-    public void calculate(final Collection<? extends Task> tasks) {
-        Set<Task> topLevelTasks = new LinkedHashSet<Task>();
-        for (final Task task : tasks) {
-            if (GUtil.isTrue(task.getGroup())) {
-                topLevelTasks.add(task);
-            }
-        }
-        GraphAggregator<Task> aggregator = new GraphAggregator<Task>(new DirectedGraph<Task, Object>() {
-            public void getNodeValues(Task node, Collection<Object> values, Collection<Task> connectedNodes) {
-                for (Task dep : node.getTaskDependencies().getDependencies(node)) {
-                    if (tasks.contains(dep)) {
-                        connectedNodes.add(dep);
-                    }
-                }
-            }
-        });
-
-        GraphAggregator.Result<Task> result = aggregator.group(topLevelTasks, tasks);
-        for (Task task : result.getTopLevelNodes()) {
-            Set<Task> nodesForThisTask = new TreeSet<Task>(result.getNodes(task));
-            Set<TaskDetails> children = new LinkedHashSet<TaskDetails>();
-            Set<String> dependencies = new TreeSet<String>();
-            for (Task node : nodesForThisTask) {
-                if (node != task) {
-                    children.add(new TaskDetailsImpl(node, Collections.<TaskDetails>emptySet(),
-                            Collections.<String>emptySet()));
-                }
-                for (Task dep : node.getTaskDependencies().getDependencies(node)) {
-                    if (topLevelTasks.contains(dep) || !tasks.contains(dep)) {
-                        dependencies.add(tasks.contains(dep) ? dep.getName() : dep.getPath());
-                    }
-                }
-            }
-
-            String group = topLevelTasks.contains(task) ? task.getGroup() : "";
-            groups.put(group, new TaskDetailsImpl(task, children, dependencies));
-        }
+import java.util.Set;
 
         if (groups.containsKey("") && groups.keySet().size() > 1) {
             groups.putAll("other", groups.get(""));
             groups.removeAll("");
         }
-    }
-
-    public Set<String> getGroups() {
-        return groups.keySet();
-    }
-
-    public Set<TaskDetails> getTasksForGroup(String group) {
-        if (!groups.containsKey(group)) {
-            throw new IllegalArgumentException(String.format("Unknown group '%s'", group));
-        }
-        return groups.get(group);
     }
 
     public static Comparator<String> last(final Comparator<String> comparator, final String lastValue) {
@@ -100,46 +40,17 @@ public class TaskReportModel {
                 return comparator.compare(o1, o2);
             }
         };
-    }
 
-    private static class TaskDetailsImpl implements TaskDetails {
-        private final Task task;
-        private final Set<TaskDetails> children;
-        private final Set<String> dependencies;
+public interface TaskReportModel {
+    String DEFAULT_GROUP = "";
 
-        public TaskDetailsImpl(Task task, Set<TaskDetails> children, Set<String> dependencies) {
-            this.task = task;
-            this.children = children;
-            this.dependencies = dependencies;
-        }
+    /**
+     * Returns the task groups which make up this model, in the order that they should be displayed.
+     */
+    Set<String> getGroups();
 
-        public String getDescription() {
-            return task.getDescription();
-        }
-
-        public String getPath() {
-            return task.getName();
-        }
-
-        @Override
-        public String toString() {
-            return task.toString();
-        }
-
-        public Task getTask() {
-            return task;
-        }
-
-        public Set<String> getDependencies() {
-            return dependencies;
-        }
-
-        public Set<TaskDetails> getChildren() {
-            return children;
-        }
-
-        public int compareTo(TaskDetails o) {
-            return getPath().compareTo(o.getPath());
-        }
-    }
+    /**
+     * Returns the tasks for the given group, in the order that they should be displayed.
+     */
+    Set<TaskDetails> getTasksForGroup(String group);
 }
