@@ -22,8 +22,11 @@ import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.DependencyArtifact;
 import org.gradle.api.artifacts.ExcludeRule;
 import org.gradle.api.artifacts.ModuleDependency;
+import org.gradle.api.artifacts.ProjectDependency;
+import org.gradle.api.artifacts.PublishArtifact;
 import org.gradle.api.artifacts.maven.Conf2ScopeMapping;
 import org.gradle.api.artifacts.maven.Conf2ScopeMappingContainer;
+import org.gradle.api.tasks.TaskDependency;
 
 import java.util.*;
 
@@ -43,7 +46,11 @@ public class DefaultPomDependenciesConverter implements PomDependenciesConverter
         List<org.apache.maven.model.Dependency> mavenDependencies = new ArrayList<org.apache.maven.model.Dependency>();
         for (ModuleDependency dependency : dependenciesMap.keySet()) {
             if (dependency.getArtifacts().size() == 0) {
-                addFromDependencyDescriptor(mavenDependencies, dependency, dependenciesMap.get(dependency), dependencyToConfigurations.get(dependency));
+                if (dependency instanceof ProjectDependency) {
+                    addFromProjectDependencyDescriptor(mavenDependencies, (ProjectDependency) dependency, dependenciesMap.get(dependency), dependencyToConfigurations.get(dependency));
+                } else {
+                    addFromDependencyDescriptor(mavenDependencies, dependency, dependenciesMap.get(dependency), dependencyToConfigurations.get(dependency));
+                }
             } else {
                 addFromArtifactDescriptor(mavenDependencies, dependency, dependenciesMap.get(dependency), dependencyToConfigurations.get(dependency));
             }
@@ -101,6 +108,14 @@ public class DefaultPomDependenciesConverter implements PomDependenciesConverter
     private void addFromDependencyDescriptor(List<Dependency> mavenDependencies, ModuleDependency dependency, String scope, 
             Set<Configuration> configurations) {
         mavenDependencies.add(createMavenDependencyFromDependencyDescriptor(dependency, scope, configurations));
+    }
+    
+    private void addFromProjectDependencyDescriptor(List<Dependency> mavenDependencies, ProjectDependency dependency, String scope, 
+            Set<Configuration> configurations) {
+        Set<PublishArtifact> allArtifacts = dependency.getProjectConfiguration().getAllArtifacts();
+        for (PublishArtifact artifact : allArtifacts) {
+            mavenDependencies.add(createMavenDependency(dependency, artifact.getName(), artifact.getType(), scope, artifact.getClassifier(), configurations));
+        }
     }
 
     private Dependency createMavenDependencyFromArtifactDescriptor(ModuleDependency dependency, DependencyArtifact artifact, String scope,
