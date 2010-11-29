@@ -68,15 +68,15 @@ public class DefaultCommandLineConverterTest {
     private final DefaultCommandLineConverter commandLineConverter = new DefaultCommandLineConverter();
 
     @Test
-    public void withoutAnyOptions() {
+    public void withoutAnyOptions() throws IOException {
         checkConversion();
     }
 
-    private void checkConversion(String... args) {
+    private void checkConversion(String... args) throws IOException {
         checkConversion(false, args);
     }
 
-    private void checkStartParameter(StartParameter startParameter) {
+    private void checkStartParameter(StartParameter startParameter) throws IOException {
         assertEquals(expectedBuildFile, startParameter.getBuildFile());
         assertEquals(expectedTaskNames, startParameter.getTaskNames());
         assertEquals(expectedProjectDependenciesBuildInstruction,
@@ -86,8 +86,7 @@ public class DefaultCommandLineConverterTest {
         assertEquals(expectedSearchUpwards, startParameter.isSearchUpwards());
         assertEquals(expectedProjectProperties, startParameter.getProjectProperties());
         assertEquals(expectedSystemProperties, startParameter.getSystemPropertiesArgs());
-        assertEquals(expectedGradleUserHome.getAbsoluteFile(), startParameter.getGradleUserHomeDir().getAbsoluteFile());
-        assertEquals(expectedGradleUserHome.getAbsoluteFile(), startParameter.getGradleUserHomeDir().getAbsoluteFile());
+        assertEquals(expectedGradleUserHome.getCanonicalPath(), startParameter.getGradleUserHomeDir().getCanonicalPath());
         assertEquals(expectedLogLevel, startParameter.getLogLevel());
         assertEquals(expectedColorOutput, startParameter.isColorOutput());
         assertEquals(expectedDryRun, startParameter.isDryRun());
@@ -97,7 +96,7 @@ public class DefaultCommandLineConverterTest {
         assertEquals(expectedProfile, startParameter.isProfile());
     }
 
-    private void checkConversion(final boolean embedded, String... args) {
+    private void checkConversion(final boolean embedded, String... args) throws IOException {
         actualStartParameter = new StartParameter();
         actualStartParameter.setCurrentDir(currentDir);
         commandLineConverter.convert(Arrays.asList(args), actualStartParameter);
@@ -111,7 +110,7 @@ public class DefaultCommandLineConverterTest {
     }
 
     @Test
-    public void withSpecifiedGradleUserHomeDirectory() {
+    public void withSpecifiedGradleUserHomeDirectory() throws IOException {
         expectedGradleUserHome = testDir.file("home");
         checkConversion("-g", expectedGradleUserHome.getAbsolutePath());
 
@@ -120,7 +119,7 @@ public class DefaultCommandLineConverterTest {
     }
 
     @Test
-    public void withSpecifiedProjectDirectory() {
+    public void withSpecifiedProjectDirectory() throws IOException {
         expectedProjectDir = testDir.file("project-dir");
         checkConversion("-p", expectedProjectDir.getAbsolutePath());
 
@@ -151,7 +150,7 @@ public class DefaultCommandLineConverterTest {
     }
 
     @Test
-    public void withInitScripts() {
+    public void withInitScripts() throws IOException {
         File script1 = currentDir.file("init1.gradle");
         expectedInitScripts.add(script1);
         checkConversion("-Iinit1.gradle");
@@ -162,7 +161,7 @@ public class DefaultCommandLineConverterTest {
     }
     
     @Test
-    public void withSystemProperties() {
+    public void withSystemProperties() throws IOException {
         final String prop1 = "gradle.prop1";
         final String valueProp1 = "value1";
         final String prop2 = "gradle.prop2";
@@ -173,7 +172,7 @@ public class DefaultCommandLineConverterTest {
     }
 
     @Test
-    public void withStartProperties() {
+    public void withStartProperties() throws IOException {
         final String prop1 = "prop1";
         final String valueProp1 = "value1";
         final String prop2 = "prop2";
@@ -184,58 +183,58 @@ public class DefaultCommandLineConverterTest {
     }
 
     @Test
-    public void withTaskNames() {
+    public void withTaskNames() throws IOException {
         expectedTaskNames = toList("a", "b");
         checkConversion("a", "b");
     }
 
     @Test
-    public void withRebuildCacheFlagSet() {
+    public void withRebuildCacheFlagSet() throws IOException {
         expectedCacheUsage = CacheUsage.REBUILD;
         checkConversion("-C", "rebuild");
     }
 
     @Test
-    public void withCacheOnFlagSet() {
+    public void withCacheOnFlagSet() throws IOException {
         checkConversion("-C", "on");
     }
 
     @Test(expected = CommandLineArgumentException.class)
-    public void withUnknownCacheFlags() {
+    public void withUnknownCacheFlags() throws IOException {
         checkConversion("-C", "unknown");
     }
 
     @Test
-    public void withSearchUpwardsFlagSet() {
+    public void withSearchUpwardsFlagSet() throws IOException {
         expectedSearchUpwards = false;
         checkConversion("-u");
     }
 
     @Test
-    public void withShowFullStacktrace() {
+    public void withShowFullStacktrace() throws IOException {
         expectedShowStackTrace = StartParameter.ShowStacktrace.ALWAYS_FULL;
         checkConversion("-S");
     }
 
     @Test
-    public void withShowStacktrace() {
+    public void withShowStacktrace() throws IOException {
         expectedShowStackTrace = StartParameter.ShowStacktrace.ALWAYS;
         checkConversion("-s");
     }
 
     @Test(expected = CommandLineArgumentException.class)
-    public void withShowStacktraceAndShowFullStacktraceShouldThrowCommandLineArgumentEx() {
+    public void withShowStacktraceAndShowFullStacktraceShouldThrowCommandLineArgumentEx() throws IOException {
         checkConversion("-sf");
     }
 
     @Test
-    public void withDryRunFlagSet() {
+    public void withDryRunFlagSet() throws IOException {
         expectedDryRun = true;
         checkConversion("-m");
     }
 
     @Test
-    public void withExcludeTask() {
+    public void withExcludeTask() throws IOException {
         expectedExcludedTasks.add("excluded");
         checkConversion("-x", "excluded");
         expectedExcludedTasks.add("excluded2");
@@ -243,122 +242,122 @@ public class DefaultCommandLineConverterTest {
     }
 
     @Test
-    public void withEmbeddedScript() {
+    public void withEmbeddedScript() throws IOException {
         expectedSearchUpwards = false;
         checkConversion(true, "-e", expectedEmbeddedScript);
     }
 
     @Test(expected = CommandLineArgumentException.class)
-    public void withEmbeddedScriptAndConflictingNoSearchUpwardsOption() {
+    public void withEmbeddedScriptAndConflictingNoSearchUpwardsOption() throws IOException {
         checkConversion("-e", "someScript", "-u", "clean");
     }
 
     @Test(expected = CommandLineArgumentException.class)
-    public void withEmbeddedScriptAndConflictingSpecifyBuildFileOption() {
+    public void withEmbeddedScriptAndConflictingSpecifyBuildFileOption() throws IOException {
         checkConversion("-e", "someScript", "-bsomeFile", "clean");
     }
 
     @Test(expected = CommandLineArgumentException.class)
-    public void withEmbeddedScriptAndConflictingSpecifySettingsFileOption() {
+    public void withEmbeddedScriptAndConflictingSpecifySettingsFileOption() throws IOException {
         checkConversion("-e", "someScript", "-csomeFile", "clean");
     }
 
     @Test
-    public void withNoProjectDependencyRebuild() {
+    public void withNoProjectDependencyRebuild() throws IOException {
         expectedProjectDependenciesBuildInstruction = new ProjectDependenciesBuildInstruction(null);
         checkConversion("-a");
     }
 
     @Test
-    public void withProjectDependencyTaskNames() {
+    public void withProjectDependencyTaskNames() throws IOException {
         expectedProjectDependenciesBuildInstruction = new ProjectDependenciesBuildInstruction(WrapUtil.toList("task1",
                 "task2"));
         checkConversion("-Atask1", "-A", "task2");
     }
 
     @Test
-    public void withQuietLoggingOptions() {
+    public void withQuietLoggingOptions() throws IOException {
         expectedLogLevel = LogLevel.QUIET;
         checkConversion("-q");
     }
 
     @Test
-    public void withInfoLoggingOptions() {
+    public void withInfoLoggingOptions() throws IOException {
         expectedLogLevel = LogLevel.INFO;
         checkConversion("-i");
     }
 
     @Test
-    public void withDebugLoggingOptions() {
+    public void withDebugLoggingOptions() throws IOException {
         expectedLogLevel = LogLevel.DEBUG;
         checkConversion("-d");
     }
 
     @Test
-    public void withNoColor() {
+    public void withNoColor() throws IOException {
         expectedColorOutput = false;
         checkConversion("--no-color");
     }
 
     @Test
-    public void withShowTasks() {
+    public void withShowTasks() throws IOException {
         expectedTaskNames = toList("tasks");
         checkConversion(false, "-t");
     }
 
     @Test
-    public void withShowAllTasks() {
+    public void withShowAllTasks() throws IOException {
         expectedTaskNames = toList("tasks", "--all");
         checkConversion(false, "-t", "--all");
     }
 
     @Test
-    public void withShowTasksAndEmbeddedScript() {
+    public void withShowTasksAndEmbeddedScript() throws IOException {
         expectedSearchUpwards = false;
         expectedTaskNames = toList("tasks");
         checkConversion(true, "-e", expectedEmbeddedScript, "-t");
     }
 
     @Test
-    public void withShowProperties() {
+    public void withShowProperties() throws IOException {
         expectedTaskNames = toList("properties");
         checkConversion(false, "-r");
     }
 
     @Test
-    public void withShowDependencies() {
+    public void withShowDependencies() throws IOException {
         expectedTaskNames = toList("dependencies");
         checkConversion(false, "-n");
     }
 
     @Test(expected = CommandLineArgumentException.class)
-    public void withLowerPParameterWithoutArgument() {
+    public void withLowerPParameterWithoutArgument() throws IOException {
         checkConversion("-p");
     }
 
     @Test(expected = CommandLineArgumentException.class)
-    public void withAParameterWithoutArgument() {
+    public void withAParameterWithoutArgument() throws IOException {
         checkConversion("-A");
     }
 
     @Test(expected = CommandLineArgumentException.class)
-    public void withUpperAAndLowerAParameter() {
+    public void withUpperAAndLowerAParameter() throws IOException {
         checkConversion("-a", "-Atask1");
     }
 
     @Test
-    public void withProfile() {
+    public void withProfile() throws IOException {
         expectedProfile = true;
         checkConversion("--profile");
     }
 
     @Test(expected = CommandLineArgumentException.class)
-    public void withUnknownOption() {
+    public void withUnknownOption() throws IOException {
         checkConversion("--unknown");
     }
 
     @Test
-    public void withTaskAndTaskOption() {
+    public void withTaskAndTaskOption() throws IOException {
         expectedTaskNames = toList("someTask", "--some-task-option");
         checkConversion("someTask", "--some-task-option");
     }
