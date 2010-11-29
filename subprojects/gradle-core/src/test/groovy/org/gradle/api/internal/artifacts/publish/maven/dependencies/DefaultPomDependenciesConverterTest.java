@@ -29,15 +29,20 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.maven.model.Exclusion;
+import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
+import org.gradle.api.artifacts.ConfigurationContainer;
 import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.artifacts.ExcludeRule;
 import org.gradle.api.artifacts.ModuleDependency;
+import org.gradle.api.artifacts.PublishArtifact;
 import org.gradle.api.artifacts.maven.Conf2ScopeMapping;
 import org.gradle.api.artifacts.maven.Conf2ScopeMappingContainer;
 import org.gradle.api.internal.artifacts.DefaultExcludeRule;
+import org.gradle.api.internal.artifacts.ProjectDependenciesBuildInstruction;
 import org.gradle.api.internal.artifacts.dependencies.DefaultDependencyArtifact;
 import org.gradle.api.internal.artifacts.dependencies.DefaultExternalModuleDependency;
+import org.gradle.api.internal.artifacts.dependencies.DefaultProjectDependency;
 import org.gradle.util.WrapUtil;
 import org.jmock.Expectations;
 import org.jmock.integration.junit4.JMock;
@@ -187,22 +192,22 @@ public class DefaultPomDependenciesConverterTest {
     }
 
     private boolean equals(org.apache.maven.model.Dependency lhs, org.apache.maven.model.Dependency rhs) {
-        if (!lhs.getGroupId().equals(lhs.getGroupId())) {
+        if (!lhs.getGroupId().equals(rhs.getGroupId())) {
             return false;
         }
-        if (!lhs.getArtifactId().equals(lhs.getArtifactId())) {
+        if (!lhs.getArtifactId().equals(rhs.getArtifactId())) {
             return false;
         }
-        if (!lhs.getVersion().equals(lhs.getVersion())) {
+        if (!lhs.getVersion().equals(rhs.getVersion())) {
             return false;
         }
-        if (lhs.getType() != null ? !lhs.getType().equals(lhs.getType()) : rhs.getType() != null) {
+        if (lhs.getType() != null ? !lhs.getType().equals(rhs.getType()) : rhs.getType() != null) {
             return false;
         }
-        if (lhs.getScope() != null ? !lhs.getScope().equals(lhs.getScope()) : rhs.getScope() != null) {
+        if (lhs.getScope() != null ? !lhs.getScope().equals(rhs.getScope()) : rhs.getScope() != null) {
             return false;
         }
-        if (!lhs.isOptional() == lhs.isOptional()) {
+        if (!lhs.isOptional() == rhs.isOptional()) {
             return false;
         }
         if (lhs.getClassifier() != null ? !lhs.getClassifier().equals(rhs.getClassifier()) : rhs.getClassifier() != null) {
@@ -249,5 +254,70 @@ public class DefaultPomDependenciesConverterTest {
         assertThat(mavenDependency.getExclusions().size(), equalTo(1));
         assertThat(((Exclusion) mavenDependency.getExclusions().get(0)).getGroupId(), equalTo(mavenExclude.getGroupId()));
         assertThat(((Exclusion) mavenDependency.getExclusions().get(0)).getArtifactId(), equalTo(mavenExclude.getArtifactId()));
+    }
+    
+    @Test
+    public void convertWithProjectDependencies() {
+        final ProjectDependenciesBuildInstruction instruction = new ProjectDependenciesBuildInstruction(WrapUtil.<String>toList());
+        final Project dependencyProjectStub = context.mock(Project.class);
+        
+        final PublishArtifact firstArtifact = context.mock(PublishArtifact.class, "first");
+        final PublishArtifact secondArtifact = context.mock(PublishArtifact.class, "second");
+        
+        final ConfigurationContainer configurationContainer = context.mock(ConfigurationContainer.class);
+        final Configuration defaultConfiguration = context.mock(Configuration.class, "default");
+        final Configuration apiConfiguration = context.mock(Configuration.class, "api");
+        
+        context.checking(new Expectations() {{
+            allowing(dependencyProjectStub).getName();
+            will(returnValue("Test"));
+            allowing(dependencyProjectStub).getGroup();
+            will(returnValue("org.example"));
+            allowing(dependencyProjectStub).getVersion();
+            will(returnValue("1.0"));
+            allowing(dependencyProjectStub).getConfigurations();
+            will(returnValue(configurationContainer));
+            allowing(configurationContainer).getByName("default");
+            will(returnValue(defaultConfiguration));
+            allowing(configurationContainer).getByName("api");
+            will(returnValue(apiConfiguration));
+        }});
+        
+        context.checking(new Expectations() {{
+            allowing(firstArtifact).getName();
+            will(returnValue("jar-name"));
+            allowing(firstArtifact).getType();
+            will(returnValue("jar"));
+            allowing(firstArtifact).getClassifier();
+            will(returnValue(""));
+            allowing(secondArtifact).getName();
+            will(returnValue("api-jar-name"));
+            allowing(secondArtifact).getType();
+            will(returnValue("jar"));
+            allowing(secondArtifact).getClassifier();
+            will(returnValue(""));
+            allowing(defaultConfiguration).getAllArtifacts();
+            will(returnValue(toSet(firstArtifact)));
+            allowing(apiConfiguration).getAllArtifacts();
+            will(returnValue(toSet(secondArtifact)));
+        }});
+        
+        final ModuleDependency projectDependency1 = new DefaultProjectDependency(dependencyProjectStub, instruction);
+        final ModuleDependency projectDependency2 = new DefaultProjectDependency(dependencyProjectStub, "api", instruction);
+        
+        final Configuration projectConfigurationStub = createNamedConfigurationStubWithDependencies("projectConf", projectDependency1, projectDependency2);
+        
+        context.checking(new Expectations() {{
+            allowing(conf2ScopeMappingContainerMock).isSkipUnmappedConfs(); will(returnValue(false));
+            allowing(conf2ScopeMappingContainerMock).getMapping(toSet(projectConfigurationStub)); will(returnValue(new Conf2ScopeMapping(null, projectConfigurationStub, null)));
+        }});
+
+        List<org.apache.maven.model.Dependency> actualMavenDependencies = dependenciesConverter.convert(conf2ScopeMappingContainerMock, toSet(
+                compileConfStub, testCompileConfStub, projectConfigurationStub));
+        assertEquals(5, actualMavenDependencies.size());
+        checkCommonMavenDependencies(actualMavenDependencies);
+        
+        assertTrue(hasDependency(actualMavenDependencies, "org.example", "jar-name", "1.0", "jar", null, "", false));
+        assertTrue(hasDependency(actualMavenDependencies, "org.example", "api-jar-name", "1.0", "jar", null, "", false));
     }
 }
