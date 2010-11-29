@@ -81,7 +81,7 @@ public class DefaultCommandLineConverterTest {
         assertEquals(expectedTaskNames, startParameter.getTaskNames());
         assertEquals(expectedProjectDependenciesBuildInstruction,
                 startParameter.getProjectDependenciesBuildInstruction());
-        assertEquals(expectedProjectDir.getAbsoluteFile(), startParameter.getCurrentDir().getAbsoluteFile());
+        assertEquals(expectedProjectDir.getCanonicalPath(), startParameter.getCurrentDir().getCanonicalPath());
         assertEquals(expectedCacheUsage, startParameter.getCacheUsage());
         assertEquals(expectedSearchUpwards, startParameter.isSearchUpwards());
         assertEquals(expectedProjectProperties, startParameter.getProjectProperties());
@@ -112,7 +112,7 @@ public class DefaultCommandLineConverterTest {
     @Test
     public void withSpecifiedGradleUserHomeDirectory() throws IOException {
         expectedGradleUserHome = testDir.file("home");
-        checkConversion("-g", expectedGradleUserHome.getAbsolutePath());
+        checkConversion("-g", expectedGradleUserHome.getCanonicalPath());
 
         expectedGradleUserHome = currentDir.file("home");
         checkConversion("-g", "home");
@@ -121,7 +121,7 @@ public class DefaultCommandLineConverterTest {
     @Test
     public void withSpecifiedProjectDirectory() throws IOException {
         expectedProjectDir = testDir.file("project-dir");
-        checkConversion("-p", expectedProjectDir.getAbsolutePath());
+        checkConversion("-p", expectedProjectDir.getCanonicalPath());
 
         expectedProjectDir = currentDir.file("project-dir");
         checkConversion("-p", "project-dir");
@@ -131,7 +131,7 @@ public class DefaultCommandLineConverterTest {
     public void withSpecifiedBuildFileName() throws IOException {
         expectedBuildFile = testDir.file("somename");
         expectedProjectDir = expectedBuildFile.getParentFile();
-        checkConversion("-b", expectedBuildFile.getAbsolutePath());
+        checkConversion("-b", expectedBuildFile.getCanonicalPath());
 
         expectedBuildFile = currentDir.file("somename");
         expectedProjectDir = expectedBuildFile.getParentFile();
