@@ -28,12 +28,16 @@ include 'codeQuality'
 include 'antlr'
 include 'ui'
 include 'openApi'
+include 'toolingApi'
 include 'docs'
+include 'integTest'
+include 'sonar'
 
 rootProject.name = 'gradle'
 rootProject.children.each {project ->
     String fileBaseName = project.name.replaceAll("\\p{Upper}") { "-${it.toLowerCase()}" }
-    project.projectDir = new File(settingsDir, "subprojects/gradle-$fileBaseName")
+    String projectDirName = "subprojects/$fileBaseName"
+    project.projectDir = new File(settingsDir, projectDirName)
     project.buildFileName = "${fileBaseName}.gradle"
     assert project.projectDir.isDirectory()
     assert project.buildFile.isFile()

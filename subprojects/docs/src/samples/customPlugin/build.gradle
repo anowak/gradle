@@ -1,0 +1,29 @@
+// START SNIPPET use-plugin
+apply plugin: 'groovy'
+
+dependencies {
+    compile gradleApi()
+}
+// END SNIPPET use-plugin
+
+apply plugin: 'maven'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    groovy localGroovy()
+    testCompile 'junit:junit:4.8.2'
+}
+
+group = 'org.gradle'
+version = '1.0-SNAPSHOT'
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            repository(url: uri('repo'))
+        }
+    }
+}

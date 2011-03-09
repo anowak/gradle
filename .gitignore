@@ -2,6 +2,7 @@
 .gradle
 /build
 /out
+/subprojects/*/out
 /intellij
 /buildSrc/lib
 /buildSrc/build
@@ -21,4 +22,8 @@
 /buildSrc/*.iml
 *.classpath
 *.project
+*.settings
+/bin
+/subprojects/*/bin
 /intTestHomeDir
+.DS_Store

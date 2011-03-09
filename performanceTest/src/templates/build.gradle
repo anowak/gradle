@@ -14,21 +14,28 @@
  * limitations under the License.
  */
 <% if (subprojects.empty ) { %>
-usePlugin('java')
+apply plugin: 'java'
 
 repositories {
     mavenCentral()
 }
 
 dependencies {
-    testCompile 'junit:junit:4.8.1'
+    testCompile 'junit:junit:4.8.2'
+
 }
-test.testReport = false
+test {
+    jvmArgs '-XX:MaxPermSize=128m', '-XX:+HeapDumpOnOutOfMemoryError'
+}
 
 <% if (groovyProject) { %>
 apply plugin: 'groovy'
 dependencies {
+<<<<<<< HEAD
     groovy 'org.codehaus.groovy:groovy-all:1.7.6'
+=======
+    groovy 'org.codehaus.groovy:groovy-all:1.7.8'
+>>>>>>> 8fdb7e671cddebe318c282e8962bd31e4cdb6963
 }
 <% } %>
 

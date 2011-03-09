@@ -1,4 +1,10 @@
 
+<<<<<<< HEAD
 Release Notes - Gradle - Version 0.9.1
 
 See http://docs.codehaus.org/display/GRADLE/Gradle+0.9.1+Release+Notes
+=======
+Release Notes - Gradle - Version ${version}
+
+See http://docs.codehaus.org/display/GRADLE/Gradle+${version}+Release+Notes
+>>>>>>> 8fdb7e671cddebe318c282e8962bd31e4cdb6963

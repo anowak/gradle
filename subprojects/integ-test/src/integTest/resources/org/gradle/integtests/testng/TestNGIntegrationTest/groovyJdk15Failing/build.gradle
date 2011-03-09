@@ -1,0 +1,17 @@
+apply plugin: 'groovy'
+
+sourceCompatibility=1.5
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+	groovy "org.codehaus.groovy:groovy-all:1.7.8"
+
+    testCompile 'org.testng:testng:5.14.10'
+}
+
+test {
+   useTestNG() 
+}

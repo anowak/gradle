@@ -103,6 +103,7 @@ class ClassDocTest extends XmlSpecification {
         format(prop.additionalValues[2].title) == 'added'
         format(prop.additionalValues[2].value) == 'specific2'
 
+<<<<<<< HEAD
         prop = doc.classProperties[1]
         prop.name == 'b'
         prop.additionalValues.size() == 2
@@ -118,6 +119,23 @@ class ClassDocTest extends XmlSpecification {
         format(prop.additionalValues[0].value) == 'inherited'
         format(prop.additionalValues[1].title) == 'overridden'
         format(prop.additionalValues[1].value) == 'general'
+=======
+        def prop2 = doc.classProperties[1]
+        prop2.name == 'b'
+        prop2.additionalValues.size() == 2
+        format(prop2.additionalValues[0].title) == 'inherited'
+        format(prop2.additionalValues[0].value) == 'inherited'
+        format(prop2.additionalValues[1].title) == 'overridden'
+        format(prop2.additionalValues[1].value) == 'general'
+
+        def prop3 = doc.classProperties[2]
+        prop3.name == 'c'
+        prop3.additionalValues.size() == 2
+        format(prop3.additionalValues[0].title) == 'inherited'
+        format(prop3.additionalValues[0].value) == 'inherited'
+        format(prop3.additionalValues[1].title) == 'overridden'
+        format(prop3.additionalValues[1].value) == 'general'
+>>>>>>> 8fdb7e671cddebe318c282e8962bd31e4cdb6963
 
         _ * classMetaData.findProperty('b') >> propertyB
         _ * classMetaData.findProperty('a') >> propertyA

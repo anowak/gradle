@@ -1,0 +1,14 @@
+apply plugin: 'java'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testCompile 'junit:junit:4.8.2'
+    testCompile 'org.testng:testng:5.14.10'
+}
+
+test {
+    include '**/*Test.*'
+}

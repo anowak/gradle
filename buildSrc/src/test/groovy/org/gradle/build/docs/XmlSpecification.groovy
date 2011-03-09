@@ -22,7 +22,11 @@ import org.xml.sax.InputSource
 import spock.lang.Specification
 import org.w3c.dom.*
 
+<<<<<<< HEAD
 class XmlSpecification extends Specification {
+=======
+abstract class XmlSpecification extends Specification {
+>>>>>>> 8fdb7e671cddebe318c282e8962bd31e4cdb6963
     final Document document = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument()
 
     def parse(String str) {
