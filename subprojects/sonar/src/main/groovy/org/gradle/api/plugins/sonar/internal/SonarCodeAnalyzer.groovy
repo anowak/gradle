@@ -21,20 +21,21 @@ import org.sonar.batch.Batch
 import org.sonar.batch.bootstrapper.EnvironmentInformation
 import org.sonar.batch.bootstrapper.ProjectDefinition
 import org.sonar.batch.bootstrapper.Reactor
-import org.gradle.util.GradleVersion
 
 /**
  * Runs Sonar code analysis using the configuration of the Sonar task.
  */
 class SonarCodeAnalyzer {
+    String gradleVersion
     def sonarTask
 
     void execute() {
         def globalProperties = new MapConfiguration(sonarTask.globalProperties)
 
         def projectProperties = new Properties()
-        properties.putAll(sonarTask.projectProperties)
+        projectProperties.putAll(sonarTask.projectProperties)
         projectProperties[CoreProperties.PROJECT_KEY_PROPERTY] = sonarTask.projectKey
+        projectProperties[CoreProperties.PROJECT_NAME_PROPERTY] = sonarTask.projectName
         projectProperties[CoreProperties.PROJECT_VERSION_PROPERTY] = sonarTask.projectVersion
 
         def project = new ProjectDefinition(sonarTask.projectDir, sonarTask.bootstrapDir, projectProperties)
@@ -44,7 +45,7 @@ class SonarCodeAnalyzer {
         sonarTask.projectDependencies.each { project.addLibrary(it.path) }
 
         def reactor = new Reactor(project)
-        def environment = new EnvironmentInformation("Gradle", GradleVersion.current().version)
+        def environment = new EnvironmentInformation("Gradle", gradleVersion)
         def batch = new Batch(globalProperties, project, reactor, environment)
         batch.execute()
     }

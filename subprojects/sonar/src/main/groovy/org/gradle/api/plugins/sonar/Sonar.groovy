@@ -17,110 +17,104 @@ package org.gradle.api.plugins.sonar
 
 import org.sonar.batch.bootstrapper.Bootstrapper
 import org.gradle.api.internal.ConventionTask
-import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.TaskAction
-import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.InputDirectory
 import org.gradle.util.ClasspathUtil
+import org.gradle.api.plugins.sonar.internal.ClassesOnlyClassLoader
+import org.gradle.util.GradleVersion
+import org.slf4j.LoggerFactory
+import ch.qos.logback.classic.Logger
+import ch.qos.logback.classic.Level
 
 /**
- * Analyzes a project and stores the results in the Sonar database.
+ * Analyzes a project and stores the results in Sonar's database.
  */
 class Sonar extends ConventionTask {
     /**
      * The Sonar server to connect to.
      */
-    @Input
     String serverUrl
 
     /**
      * The directory to be used for caching files downloaded from the Sonar server.
      */
-    @Input
-    File bootstrapDir = new File(System.getProperty("java.io.tmpdir"), "sonar-bootstrap")
+    File bootstrapDir
 
     /**
      * The base directory for the project to be analyzed.
      */
-    @Input
     File projectDir
+
+    /**
+     * The build output directory for the project to be analyzed.
+     */
+    File buildDir
 
     /**
      * The directories containing the production sources of the project to be analyzed.
      */
-    @InputDirectory
     Set<File> projectMainSourceDirs = []
 
     /**
      * The directories containing the test sources of the project to be analyzed.
      */
-    @InputDirectory
     Set<File> projectTestSourceDirs = []
 
     /**
      * The directories containing the class files of the project to be analyzed.
      */
-    @InputDirectory
     Set<File> projectClassesDirs = []
 
     /**
      * The dependencies of the project to be analyzed. Typically these will be Jar files.
      */
-    @InputDirectory
     Set<File> projectDependencies = []
 
     /**
      * A unique key for identifying the project to be analyzed.
      */
-    @Input
-    @Optional
     String projectKey
 
     /**
      * The name of the project to be analyzed.
      */
-    @Input
-    @Optional
     String projectName
 
     /**
      * The description of the project to be analyzed.
      */
-    @Input
-    @Optional
     String projectDescription
 
     /**
      * The version of the project to be analyzed.
      */
-    @Input
-    @Optional
     String projectVersion
 
     /**
      * Global properties for use by the Sonar code analyzer.
      */
-    @Input
     Map globalProperties = [:]
 
     /**
      * Project-specific properties for use by the Sonar code analyzer.
      */
-    @Input
     Map projectProperties = [:]
 
     @TaskAction
     void execute() {
-        bootstrapDir.mkdirs()
-        def bootstrapper = new Bootstrapper("Gradle", getServerUrl(), getBootstrapDir())
+        withErrorSqlLogging {
+            getBootstrapDir().mkdirs()
+            def bootstrapper = new Bootstrapper("Gradle", getServerUrl(), getBootstrapDir())
 
-        def classLoader = bootstrapper.createClassLoader([findSonarJar()] as URL[],
-                Sonar.classLoader, "groovy", "org.codehaus.groovy")
+            def classLoader = bootstrapper.createClassLoader(
+                    [findGradleSonarJar()] as URL[], new ClassesOnlyClassLoader(Sonar.classLoader),
+                    "groovy", "org.codehaus.groovy", "org.slf4j", "org.apache.log4j", "org.apache.commons.logging")
 
-        def launcherClass = classLoader.loadClass("org.gradle.api.plugins.sonar.internal.SonarCodeAnalyzer")
-        def launcher = launcherClass.newInstance()
-        launcher.sonarTask = this
-        launcher.execute()
+            def analyzerClass = classLoader.loadClass("org.gradle.api.plugins.sonar.internal.SonarCodeAnalyzer")
+            def analyzer = analyzerClass.newInstance()
+            analyzer.gradleVersion = GradleVersion.current().version
+            analyzer.sonarTask = this
+            analyzer.execute()
+        }
     }
 
     /**
@@ -239,9 +233,26 @@ class Sonar extends ConventionTask {
         projectProperties.putAll(properties)
     }
 
-    private URL findSonarJar() {
+    protected URL findGradleSonarJar() {
         def url = ClasspathUtil.getClasspath(Sonar.classLoader).find { it.path.contains("gradle-sonar") }
-        assert url != null, "failed to detect gradle-sonar Jar"
+        assert url != null, "failed to detect file system location of gradle-sonar Jar"
         url
+    }
+
+    // limit Hibernate SQL logging to errors, no matter what the Gradle log level is
+    // this is a workaround for org.sonar.jpa.session.AbstractDatabaseConnector, line 158:
+    // props.put("hibernate.show_sql", Boolean.valueOf(LOG_SQL.isInfoEnabled()).toString());
+    // without this workaround, each SQL statement gets logged even if Gradle log level
+    // is set to QUIET
+    private void withErrorSqlLogging(Closure block) {
+        Logger sqlLogger = (Logger) LoggerFactory.getLogger("org.hibernate.SQL")
+        def oldLevel = sqlLogger.level
+
+        try {
+            sqlLogger.level = Level.ERROR
+            block()
+        } finally {
+            sqlLogger.level = oldLevel
+        }
     }
 }

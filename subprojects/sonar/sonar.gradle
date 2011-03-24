@@ -16,6 +16,7 @@
 
 configurations {
     provided
+    provided.extendsFrom(compile)
 }
 
 dependencies {
@@ -27,10 +28,21 @@ dependencies {
 
     compile "org.codehaus.sonar:sonar-batch-bootstrapper:2.6"
     provided "org.codehaus.sonar:sonar-batch:2.6"
+
+    testCompile project(path: ':core', configuration: 'testFixtures')
 }
 
 sourceSets {
     main {
-        compileClasspath = configurations.compile + configurations.provided
+        compileClasspath = configurations.provided
+    }
+}
+
+ideaModule {
+    // TODO: remove everything but then-part after Gradle build has been updated to 1.0-milestone-2
+    if (scopes.PROVIDED) {
+        scopes.PROVIDED.plus += configurations.provided
+    } else {
+        scopes.COMPILE.plus += configurations.provided
     }
 }
